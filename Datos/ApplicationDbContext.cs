@@ -10,6 +10,8 @@ namespace ExampleAGAPI.Datos
             
         }
         public DbSet<AGranel> Productos { get; set; }
+        public DbSet<NumeroProducto> NumeroProductos{ get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

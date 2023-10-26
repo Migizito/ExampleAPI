@@ -2,9 +2,8 @@
 
 namespace ExampleAGAPI.Models.DTO
 {
-    public class AGranelDTO
+    public class AGranelCreateDTO
     {
-        public int Id { get; set; }
         [Required]
         [MaxLength(50)]
         public string Nombre { get; set; }
@@ -15,8 +14,6 @@ namespace ExampleAGAPI.Models.DTO
         public int Metros { get; set; }
         public string ImageUrl { get; set; }
         public string Amenidad { get; set; }
-        public DateTime FechaCreacion { get; set; }
-        public DateTime FechaActualizacion { get; set; }
-
+        
     }
 }

@@ -12,30 +12,32 @@ namespace ExampleAGAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AGranelController : ControllerBase
+    public class NumeroProductoController : ControllerBase
     {
-        private readonly ILogger<AGranelController> _logger;
+        private readonly ILogger<NumeroProductoController> _logger;
         private readonly IAGranelRepository _agranelRepo;
+        private readonly INumeroProductoRepository _numeroProductoRepo;
         private readonly IMapper _mapper;
         protected APIResponse _response;
-        public AGranelController(ILogger<AGranelController> logger, IAGranelRepository agranelRepo, IMapper mapper)
+        public NumeroProductoController(ILogger<NumeroProductoController> logger, IAGranelRepository agranelRepo, INumeroProductoRepository numeroProductoRepo, IMapper mapper)
         {
             _logger = logger;
             _agranelRepo = agranelRepo;
+            _numeroProductoRepo = numeroProductoRepo;
             _mapper = mapper;
             _response = new ();
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<APIResponse>> GetAllProductos() 
+        public async Task<ActionResult<APIResponse>> GetNumeroProductos() 
         {
             try
             {
-                _logger.LogInformation("Obtener los productos");
+                _logger.LogInformation("Obtener los numeros productos");
 
-                IEnumerable<AGranel> agranelList = await _agranelRepo.ObtenerTodos();
-                _response.Resultado = _mapper.Map<IEnumerable<AGranelDTO>>(agranelList);
+                IEnumerable<NumeroProducto> numeroProductoList = await _numeroProductoRepo.ObtenerTodos();
+                _response.Resultado = _mapper.Map<IEnumerable<NumeroProductoDTO>>(numeroProductoList);
                 _response.statusCode = HttpStatusCode.OK;
                 _response.IsExitoso = true;
                 return Ok(_response);
@@ -50,32 +52,32 @@ namespace ExampleAGAPI.Controllers
             
         }
 
-        [HttpGet ("id:int", Name = "GetAGranel")]
+        [HttpGet ("id:int", Name = "GetNumeroProducto")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<APIResponse>> GetProducto(int id)
+        public async Task<ActionResult<APIResponse>> GetNumeroProducto(int id)
         {
             try
             {
                 if (id == 0)
                 {
-                    _logger.LogError("Error al traer producto con el id" + id);
+                    _logger.LogError("Error al traer numero producto con el id" + id);
                     _response.statusCode = HttpStatusCode.BadRequest;
                     _response.IsExitoso = false;
                     return BadRequest(_response);
                 }
 
                 //var agranel = AGranelStore.aGranelList.FirstOrDefault(a => a.Id == id);
-                var product = await _agranelRepo.Obtener(p => p.Id == id);
+                var numeroProduct = await _numeroProductoRepo.Obtener(p => p.NroProducto == id);
 
-                if (product == null)
+                if (numeroProduct == null)
                 {
                     _response.statusCode = HttpStatusCode.NotFound;
                     _response.IsExitoso = false;
                     return NotFound(_response);
                 }
-                _response.Resultado = _mapper.Map<AGranelDTO>(product);
+                _response.Resultado = _mapper.Map<NumeroProductoDTO>(numeroProduct);
                 _response.statusCode = HttpStatusCode.OK;
                 _response.IsExitoso = true;
                 return Ok(_response);
@@ -93,7 +95,7 @@ namespace ExampleAGAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<APIResponse>> CrearProducto([FromBody] AGranelCreateDTO createDTO)
+        public async Task<ActionResult<APIResponse>> CrearNumeroProducto([FromBody] NumeroProductoCreateDTO createDTO)
         {
             try
             {
@@ -101,25 +103,31 @@ namespace ExampleAGAPI.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _agranelRepo.Obtener(p => p.Nombre.ToLower() == createDTO.Nombre.ToLower()) != null)
+                if (await _numeroProductoRepo.Obtener(p => p.NroProducto == createDTO.NroProducto) != null)
                 {
-                    ModelState.AddModelError("Nombre Existe", "El producto con ese nombre ya existe");
+                    ModelState.AddModelError("Numero Existe", "El numero de producto ya existe");
                     return BadRequest(ModelState);
                 }
+                if(await _agranelRepo.Obtener(a=>a.Id==createDTO.IdProducto)==null)
+                {
+                    ModelState.AddModelError("Foreign Key", "El Id de producto no existe");
+                    return BadRequest(ModelState);
+                }
+
                 if (createDTO == null)
                 {
                     return BadRequest(createDTO);
                 }
 
-                AGranel model = _mapper.Map<AGranel>(createDTO);
+                NumeroProducto model = _mapper.Map<NumeroProducto>(createDTO);
                 model.FechaCreacion = DateTime.Now;
                 model.FechaActualizacion = DateTime.Now;                
-                await _agranelRepo.Crear(model);
+                await _numeroProductoRepo.Crear(model);
                 _response.Resultado = model;
                 _response.statusCode = HttpStatusCode.Created;
                 _response.IsExitoso = true;
 
-                return CreatedAtRoute("GetAGranel", new { id = model.Id }, _response);
+                return CreatedAtRoute("GetNumeroProducto", new { id = model.NroProducto }, _response);
             }
             catch (Exception ex)
             {
@@ -134,7 +142,7 @@ namespace ExampleAGAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteProducto(int id) 
+        public async Task<IActionResult> DeleteNumeroProducto(int id) 
         {
             try
             {
@@ -144,14 +152,14 @@ namespace ExampleAGAPI.Controllers
                     _response.statusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_response);
                 }
-                var agranel = await _agranelRepo.Obtener(a => a.Id == id);
-                if (agranel == null)
+                var numeroProducto = await _numeroProductoRepo.Obtener(a => a.NroProducto == id);
+                if (numeroProducto == null)
                 {
                     _response.IsExitoso = false;
                     _response.statusCode = HttpStatusCode.NotFound;
                     return NotFound(_response);
                 }
-                await _agranelRepo.Remover(agranel);
+                await _numeroProductoRepo.Remover(numeroProducto);
                 _response.statusCode = HttpStatusCode.NoContent;
                 _response.IsExitoso = true;
                 return Ok(_response);
@@ -167,7 +175,7 @@ namespace ExampleAGAPI.Controllers
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateProducto(int id, [FromBody] AGranelUpdateDTO updateDTO)
+        public async Task<IActionResult> UpdateNumeroProducto(int id, [FromBody] NumeroProductoUpdateDTO updateDTO)
         {
             if(updateDTO == null)
             {
@@ -175,12 +183,19 @@ namespace ExampleAGAPI.Controllers
                 _response.statusCode = HttpStatusCode.BadRequest;
                 return BadRequest(_response);
             }
-            var agranel = await _agranelRepo.Obtener(a => a.Id == id);
+            if(await _agranelRepo.Obtener(a=>a.Id == updateDTO.IdProducto)==null)
+            {
+                ModelState.AddModelError("Foreign Key", "El Id de producto no existe");
+                return BadRequest(ModelState);
+            }
 
-            AGranel model = _mapper.Map<AGranel>(updateDTO);
-            model.FechaCreacion = agranel.FechaCreacion;
+            //var numeroProduct = await _numeroProductoRepo.Obtener(p => p.NroProducto == id);
+
+
+            NumeroProducto model = _mapper.Map<NumeroProducto>(updateDTO);
+            model.FechaCreacion = DateTime.Now;
             model.FechaActualizacion = DateTime.Now;
-            await _agranelRepo.Update(model);
+            await _numeroProductoRepo.Update(model);
             _response.statusCode = HttpStatusCode.NoContent;
             _response.IsExitoso = true;
             return Ok(_response);
